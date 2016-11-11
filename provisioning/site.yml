@@ -1,0 +1,98 @@
+# file: site.yml
+
+- hosts: all
+  sudo_user: "root"
+  sudo: yes
+
+  tasks:
+    - apt: upgrade=dist update_cache=yes
+
+  roles:
+
+   #- geerlingguy.security
+   # - geerlingguy.firewall
+   - ANXS.postgresql
+   - jdauphant.nginx
+   - andrewrothstein.ruby
+   - { role: ashwoods.uwsgi-emperor, uwsgi_install_method: pip3, tags: ['update']}
+   - { role: app, tags: ['update']}
+  vars:
+    password: "{{  lookup('password', '/tmp/.pass length=15') }}"
+    key: "{{  lookup('password', '/tmp/.key length=20')  }}"
+    postgresql_version: 9.4
+    postgresql_encoding: 'UTF-8'
+    postgresql_locale: 'en_US.UTF-8'
+    postgresql_ext_install_contrib: yes
+    postgresql_ext_install_dev_headers: yes
+
+    postgresql_admin_user: "postgres"
+    postgresql_default_auth_method: "trust"
+
+    postgresql_cluster_name: "main"
+    postgresql_cluster_reset: false
+    postgresql_apt_repository: false
+
+    # List of users to be created (optional)
+    postgresql_users:
+      - name: "{{PROJECT_NAME}}"
+        pass: "{{password}}"
+        encrypted: no       # denotes if the password is already encrypted.
+
+    # List of databases to be created (optional)
+    postgresql_databases:
+      - name: "{{PROJECT_NAME}}"
+        hstore: yes         # flag to install the hstore extension on this database (yes/no)
+        owner: "{{PROJECT_NAME}}"
+
+    nginx_http_params:
+      - sendfile on
+      - access_log /var/log/nginx/access.log
+      - client_max_body_size 1G
+    nginx_sites:
+      app:
+        - listen 80
+        - server_name _
+        - location / {
+            uwsgi_pass app;
+            include uwsgi_params;
+          }
+        - location /static {
+            alias /srv/src/static;
+          }
+        - location /media {
+            alias /src/src/media;
+          }
+
+    nginx_configs:
+      upstream:
+          - upstream app { server unix:///tmp/app.sock; }
+    firewall_allowed_tcp_ports:
+      - "22"
+      - "25"
+      - "80"
+    security_ssh_port: 22
+    security_ssh_password_authentication: "no"
+    security_ssh_permit_root_login: "yes"
+    security_ssh_usedns: "no"
+    security_autoupdate_enabled: true
+    security_fail2ban_enabled: true
+
+    uwsgi_version: '2.0.13.1'
+
+    uwsgi_configs:
+      master: true
+      processes: 12
+      vacuum: true
+      lazy-apps: true
+      die-on-term: true
+      enable-threads: true
+      max-worker-lifetime: 600
+      chmod-socket: 666
+      chdir: "/srv/src"
+      virtualenv: "/srv/venv"
+      wsgi-file: "/srv/wsgi.py"
+      socket: "/srv/.socket-file.sock"
+      pidfile: "/srv/.pid-file.pid"
+      touch-chain-reload: "/srv/.uwsgi-reload-file"
+      logto: "/srv/.uwsgi.log"
+      logdate: true
