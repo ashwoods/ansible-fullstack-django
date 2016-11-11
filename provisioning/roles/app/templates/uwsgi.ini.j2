@@ -1,0 +1,13 @@
+[uwsgi]
+
+# Django-related settings
+# the base directory (full path)
+chdir           = /srv/src
+module          = {{PROJECT_NAME}}.wsgi
+home            = /srv/venv
+
+master          = true
+processes       = 10
+chmod_socket    = 664
+socket          = /srv/app.sock
+vacuum          = true

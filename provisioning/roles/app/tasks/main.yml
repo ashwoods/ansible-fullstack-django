@@ -1,0 +1,76 @@
+- name: python | install app python and system dependencies
+  apt: name={{item}} state=present
+  with_items:
+    - python
+    - python-dev
+    - python3
+    - python3-dev
+    - python-software-properties
+    - python-pip
+    - python3-pip
+    - python3-virtualenv
+    - python-virtualenv
+    - virtualenvwrapper
+    - build-essential
+    - libavcodec-dev
+    - libavdevice-dev
+    - libavformat-dev
+    - libavresample-dev
+    - libavutil-dev
+    - libbz2-dev
+    - libffi-dev
+    - libghc-text-icu-dev
+    - libjpeg-dev
+    - libncurses5-dev
+    - libreadline-dev
+    - libsqlite3-dev
+    - libssl-dev
+    - libswscale-dev
+    - libxml2
+    - libxml2-dev
+    - libxslt1-dev
+    - zlib1g-dev
+    - llvm
+    - node-less
+    - git
+    - mercurial
+    - curl
+    - wget
+    - redis-server
+    - pkg-config
+
+#- name: sass | install gem
+#  command: gem install sass
+#  args:
+#    creates: /usr/local/bin/sass
+
+
+
+- name: app | get source via git
+  git: repo={{PROJECT_URL}} dest=/srv/src version={{GIT_VERSION|default('master')}}
+
+- name: app | upgrade pip and wheel
+  pip: name={{item.name}} state=latest virtualenv=/srv/venv virtualenv_python=python3.4
+
+  with_items:
+    - { name: 'pip'}
+    - { name: 'wheel'}
+    - { name: 'setuptools'}
+
+- name: app | install project requirements
+  pip: requirements=/srv/src/requirements.txt virtualenv=/srv/venv virtualenv_python=python3.4
+
+- name: app | install src
+  pip: chdir='/srv/src/' virtualenv=/srv/venv virtualenv_python=python3.4 editable=True name='.'
+
+- name: app | copy production local.py
+  template: src=templates/local.py.j2  dest=/srv/src/{{PROJECT_NAME}}/settings/local.py
+
+- name: apps | collectstatic
+  command: /srv/venv/bin/python /srv/src/manage.py collectstatic --noinput
+
+- name: apps | db migrate
+  command: /srv/venv/bin/python /srv/src/manage.py migrate --noinput
+
+- name: app | copy project-specific ini file for uWSGI
+  template: src=templates/uwsgi.ini.j2  dest=/etc/uwsgi-emperor/vassals/app.ini
