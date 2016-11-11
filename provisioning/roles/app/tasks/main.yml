@@ -74,3 +74,6 @@
 
 - name: app | copy project-specific ini file for uWSGI
   template: src=templates/uwsgi.ini.j2  dest=/etc/uwsgi-emperor/vassals/app.ini
+
+- name: app | chown srv directory
+  command: chown -R www-data /srv

@@ -14,7 +14,7 @@
    - ANXS.postgresql
    - jdauphant.nginx
    - andrewrothstein.ruby
-   - { role: theonion.uwsgi-emperor, uwsgi_install_method: pip, tags: ['update']}
+   - { role: ashwoods.uwsgi-emperor, uwsgi_install_method: pip3, tags: ['update']}
    - { role: app, tags: ['update']}
   vars:
     password: "{{  lookup('password', '/tmp/.pass length=15') }}"
