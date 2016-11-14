@@ -79,20 +79,3 @@
 
     uwsgi_version: '2.0.13.1'
 
-    uwsgi_configs:
-      master: true
-      processes: 12
-      vacuum: true
-      lazy-apps: true
-      die-on-term: true
-      enable-threads: true
-      max-worker-lifetime: 600
-      chmod-socket: 666
-      chdir: "/srv/src"
-      virtualenv: "/srv/venv"
-      wsgi-file: "/srv/wsgi.py"
-      socket: "/srv/.socket-file.sock"
-      pidfile: "/srv/.pid-file.pid"
-      touch-chain-reload: "/srv/.uwsgi-reload-file"
-      logto: "/srv/.uwsgi.log"
-      logdate: true
