@@ -162,7 +162,7 @@ then
     exit 1
 fi
 
-ansible-playbook -c paramiko -u $REMOTE_USER -i "$HOST," \
+ansible-playbook -u $REMOTE_USER -i "$HOST," \
    --extra-vars "PROJECT_URL=$GIT_REPO_URL PROJECT_NAME=$PROJECT_NAME REMOTE_USER=$REMOTE_USER GIT_VERSION=$GIT_VERSION" \
    provisioning/site.yml ${VERBOSE_OPTION} ${UPDATE_OPTION}
 
