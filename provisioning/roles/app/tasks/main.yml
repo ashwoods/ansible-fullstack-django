@@ -1,3 +1,5 @@
+
+
 - name: python | install app python and system dependencies
   apt: name={{item}} state=present
   with_items:
@@ -39,18 +41,14 @@
     - redis-server
     - pkg-config
 
-#- name: sass | install gem
-#  command: gem install sass
-#  args:
-#    creates: /usr/local/bin/sass
-
-
 
 - name: app | get source via git
-  git: repo={{PROJECT_URL}} dest=/srv/src version={{GIT_VERSION|default('master')}}
+  git: repo={{PROJECT_URL}} dest=/app/src version={{GIT_VERSION|default('master')}}
+  become_user: app
 
-- name: app | upgrade pip and wheel
-  pip: name={{item.name}} state=latest virtualenv=/srv/venv virtualenv_python=python3.4
+#- name: app | upgrade pip and wheel
+#  pip: name={{item.name}} state=latest virtualenv=/app/venv virtualenv_python=python3.4
+#  become_user: app
 
   with_items:
     - { name: 'pip'}
@@ -58,22 +56,36 @@
     - { name: 'setuptools'}
 
 - name: app | install project requirements
-  pip: requirements=/srv/src/requirements.txt virtualenv=/srv/venv virtualenv_python=python3.4
+  pip:
+    requirements: /app/src/requirements.txt
+    virtualenv: /app/venv
+    chdir: /app/
+    virtualenv_python: python3.4
+  become_user: app
 
-- name: app | install src
-  pip: chdir='/srv/src/' virtualenv=/srv/venv virtualenv_python=python3.4 editable=True name='.'
-
-- name: app | copy production local.py
-  template: src=templates/local.py.j2  dest=/srv/src/{{PROJECT_NAME}}/settings/local.py
-
-- name: apps | collectstatic
-  command: /srv/venv/bin/python /srv/src/manage.py collectstatic --noinput
-
-- name: apps | db migrate
-  command: /srv/venv/bin/python /srv/src/manage.py migrate --noinput
-
-- name: app | copy project-specific ini file for uWSGI
-  template: src=templates/uwsgi.ini.j2  dest=/etc/uwsgi-emperor/vassals/app.ini
-
-- name: app | chown srv directory
-  command: chown -R www-data /srv
+#- name: app | install src
+#  pip: chdir='/app/src/' virtualenv=/app/venv virtualenv_python=python3.4 editable=True name='.'
+#  become_user: app
+#
+#- name: apps | collectstatic
+#  command: /app/venv/bin/python /app/src/manage.py collectstatic --noinput
+#  become_user: app
+#
+#- name: apps | db migrate
+#  command: /app/venv/bin/python /app/src/manage.py migrate --noinput
+#  become_user: app
+#
+#- name: app | copy project-specific ini file for uWSGI
+#  template: src=templates/uwsgi.ini.j2  dest=/etc/uwsgi-emperor/vassals/{{PROJECT_NAME}}.ini
+#
+#- name: app | chown media directory
+#  file:
+#    path: /app/media
+#    owner: app
+#    group: www-data
+#    recurse: yes
+#
+#- name: app | reload uwsgi app
+#  file:
+#    path: /tmp/app.reload
+#    state: touch
