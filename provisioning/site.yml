@@ -19,7 +19,7 @@
     - fetch: src=/app/.djkey dest="/tmp" fail_on_missing=yes
 
   roles:
-    # - role: ANXS.postgresql
+    - role: ANXS.postgresql
     # - role: jdauphant.nginx
     #- { role: elasticsearch, es_instance_name: "node1",
     #es_config: {

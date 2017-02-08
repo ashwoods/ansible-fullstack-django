@@ -55,7 +55,7 @@
   become_user: app
 
 - name: app | get source via git
-  git: repo={{PROJECT_URL}} dest=/app/src version={{GIT_VERSION|default('master')}} force=yes update=yes
+  git: repo={{PROJECT_URL}} dest=/app/src version={{GIT_VERSION|default('master')}} force=yes update=yes editable=True
   become_user: app
 
 - name: app | create virtualenv
