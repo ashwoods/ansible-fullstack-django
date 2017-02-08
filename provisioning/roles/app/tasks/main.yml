@@ -100,6 +100,9 @@
 - name: app | copy project-specific ini file for uWSGI
   template: src=templates/uwsgi.ini.j2  dest=/etc/uwsgi-emperor/vassals/{{PROJECT_NAME}}.ini
 
+- name: app | fix media permissions
+  shell: 'chmod 777 -R /app/public'
+
 - name: app | reload uwsgi app
   file:
     path: /tmp/app.reload
