@@ -55,7 +55,7 @@
   become_user: app
 
 - name: app | get source via git
-  git: repo={{PROJECT_URL}} dest=/app/src version={{GIT_VERSION|default('master')}} force=yes update=yes editable=True
+  git: repo={{PROJECT_URL}} dest=/app/src version={{GIT_VERSION|default('master')}} force=yes update=yes
   become_user: app
 
 - name: app | create virtualenv
@@ -80,7 +80,7 @@
   become_user: app
 
 - name: app | install src
-  pip: chdir='/app/src/' editable=True name='.' executable=/app/venv/bin/pip
+  shell: /app/venv/bin/pip install -e /app/venv/src
   become_user: app
 
 - name: apps | collectstatic
