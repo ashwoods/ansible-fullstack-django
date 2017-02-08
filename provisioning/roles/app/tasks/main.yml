@@ -80,7 +80,7 @@
   become_user: app
 
 - name: app | install src
-  shell: /app/venv/bin/pip install -e /app/venv/src
+  shell: /app/venv/bin/pip install -e /app/src
   become_user: app
 
 - name: apps | collectstatic
