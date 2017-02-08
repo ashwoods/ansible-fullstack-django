@@ -16,3 +16,4 @@ env             = SECRET_KEY={{key}}
 env             = DATABASE_URL=postgresql://{{PROJECT_NAME}}:{{password}}@localhost:5432/{{PROJECT_NAME}}
 env             = MEDIA_ROOT=/app/media
 env             = MEDIA_STATIC=/app/static
+# attach-daemon   = /app/venv/bin/celery worker -B --settings={{PROJECT_NAME}}.settings

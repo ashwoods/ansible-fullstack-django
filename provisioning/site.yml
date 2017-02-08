@@ -8,24 +8,27 @@
   pre_tasks:
     - apt: upgrade=dist update_cache=yes
     - user: name=app home=/app
-    - file: path=/app state=directory owner=app mode=0740
-    - shell: openssl passwd -1 -in /dev/urandom | head -1 > /app/.djkey
+    - file: path=/app state=directory owner=app mode=0777
+    - shell: date +%s | sha256sum | base64 | head -c 32 > /app/.djkey
       args:
         creates: /app/.djkey
-    - shell: openssl passwd -1 -in /dev/urandom | head -1 > /app/.dbpass
+    - shell: date +%s | sha256sum | base64 | head -c 32 >  /app/.dbpass
       args:
         creates: /app/.dbpass
     - fetch: src=/app/.dbpass dest="/tmp" fail_on_missing=yes
     - fetch: src=/app/.djkey dest="/tmp" fail_on_missing=yes
 
   roles:
-   #- geerlingguy.security
-   #- geerlingguy.firewall
-   # - ANXS.postgresql
-   # - jdauphant.nginx
-   #- andrewrothstein.ruby
-   # - { role: ashwoods.uwsgi-emperor, uwsgi_install_method: pip3 }
-   - { role: app, tags: ['update']}
+    # - role: ANXS.postgresql
+    # - role: jdauphant.nginx
+    #- { role: elasticsearch, es_instance_name: "node1",
+    #es_config: {
+    ##    node.name: "node1",
+    #    es_version: "2.4.4",}
+    #}
+    - { role: app, tags: ['update']}
+    # - { role: ashwoods.uwsgi-emperor, uwsgi_install_method: pip3 }
+
   vars:
     password: "{{  lookup('file', '/tmp/' + inventory_hostname + '/app/.dbpass') }}"
     key: "{{  lookup('file', '/tmp/' + inventory_hostname + '/app/.djkey')  }}"

@@ -1,0 +1,10 @@
+- src: geerlingguy.security
+- src: geerlingguy.firewall
+- src: ANXS.postgresql
+- src: jdauphant.nginx
+- src: andrewrothstein.ruby
+- src: https://github.com/ashwoods/ansible-uwsgi-emperor
+  name: ashwoods.uwsgi-emperor
+- src: https://github.com/elastic/ansible-elasticsearch
+  name: elasticsearch
+  version: 21363d052772192f58798d6fd305bf37d8ac1c27
