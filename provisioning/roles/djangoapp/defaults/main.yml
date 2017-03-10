@@ -1,0 +1,6 @@
+djangoapps_home: "/srv/{{PROJECT_NAME}}"
+djangoapps_user: "{{PROJECT_NAME}}"
+djangoapps_project: "{{PROJECT_NAME}}"
+djangoapps_venv: "{{djangoapps_home}}/venv"
+djangoapps_src: "{{djangoapps_home}}/src"
+

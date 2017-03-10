@@ -2,94 +2,37 @@
 # Master playbook
 
 - hosts: all
-  # sudo_user: "root"
   become: yes
   become_user: "root"
   pre_tasks:
     - apt: upgrade=dist update_cache=yes
-    - user: name=app home=/app
-    - file: path=/app state=directory owner=app mode=0777
-    - shell: date +%s | sha256sum | base64 | head -c 32 > /app/.djkey
-      args:
-        creates: /app/.djkey
-    - shell: date +%s | sha256sum | base64 | head -c 32 >  /app/.dbpass
-      args:
-        creates: /app/.dbpass
-    - fetch: src=/app/.dbpass dest="/tmp" fail_on_missing=yes
-    - fetch: src=/app/.djkey dest="/tmp" fail_on_missing=yes
+    - apt: name={{item}} state=present
+      with_items:
+        - libpcre3
+        - libcap-dev
+        - libpcre3-dev
+        - vim
+        - tmux
 
-  roles:
-    - role: ANXS.postgresql
-    # - role: jdauphant.nginx
-    #- { role: elasticsearch, es_instance_name: "node1",
-    #es_config: {
-    ##    node.name: "node1",
-    #    es_version: "2.4.4",}
-    #}
-    - { role: app, tags: ['update']}
-    # - { role: ashwoods.uwsgi-emperor, uwsgi_install_method: pip3 }
+    - shell: date +%s | sha256sum | base64 | head -c 32 > /root/.djkey
+      args:
+        creates: /root/.djkey
+    - shell: date +%s | sha256sum | base64 | head -c 32 >  /root/.dbpass
+      args:
+        creates: /root/.dbpass
+    - fetch: src=/root/.dbpass dest="/tmp" fail_on_missing=yes
+    - fetch: src=/root/.djkey dest="/tmp" fail_on_missing=yes
+
+    - include_vars: file=vars/security.yml
+    - include_vars: file=vars/postgresql.yml
 
   vars:
-    password: "{{  lookup('file', '/tmp/' + inventory_hostname + '/app/.dbpass') }}"
-    key: "{{  lookup('file', '/tmp/' + inventory_hostname + '/app/.djkey')  }}"
-    postgresql_version: 9.4
-    postgresql_encoding: 'UTF-8'
-    postgresql_locale: 'en_US.UTF-8'
-    postgresql_ext_install_contrib: yes
-    postgresql_ext_install_dev_headers: yes
+    password: "{{  lookup('file', '/tmp/' + inventory_hostname + '/root/.dbpass') }}"
+    key: "{{  lookup('file', '/tmp/' + inventory_hostname + '/root/.djkey')  }}"
 
-    postgresql_admin_user: "postgres"
-    postgresql_default_auth_method: "trust"
-
-    postgresql_cluster_name: "main"
-    postgresql_cluster_reset: false
-    postgresql_apt_repository: false
-
-    # List of users to be created (optional)
-    postgresql_users:
-      - name: "{{PROJECT_NAME}}"
-        pass: "{{password}}"
-        encrypted: no       # denotes if the password is already encrypted.
-
-    # List of databases to be created (optional)
-    postgresql_databases:
-      - name: "{{PROJECT_NAME}}"
-        hstore: yes         # flag to install the hstore extension on this database (yes/no)
-        owner: "{{PROJECT_NAME}}"
-
-    nginx_http_params:
-      - sendfile on
-      - access_log /var/log/nginx/access.log
-      - client_max_body_size 1G
-    nginx_sites:
-      app:
-        - listen 80
-        - server_name _
-        - location / {
-            client_max_body_size 200M;
-            uwsgi_pass app;
-            include uwsgi_params;
-          }
-        - location /static {
-            alias /app/static;
-          }
-        - location /media {
-            alias /app/media;
-          }
-
-    nginx_configs:
-      upstream:
-          - upstream app { server unix:///tmp/app.sock; }
-    firewall_allowed_tcp_ports:
-      - "22"
-      - "25"
-      - "80"
-    security_ssh_port: 22
-    security_ssh_password_authentication: "no"
-    security_ssh_permit_root_login: "yes"
-    security_ssh_usedns: "no"
-    security_autoupdate_enabled: true
-    security_fail2ban_enabled: true
-
-    uwsgi_version: '2.0.13.1'
+  roles:
+    - { role: ANXS.postgresql, tags: ['provision']}
+    - { role: jdauphant.nginx, nginx_sites: {}, tags: ['provision']}
+    - { role: ashwoods.uwsgi-emperor, uwsgi_install_method: pip3, uwsgi_version: '2.0.13.1', uwsgi_uid: 'root', uwsgi_gid: 'root' }
+    - { role: djangoapp }
 

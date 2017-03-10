@@ -1,0 +1,14 @@
+postgresql_version: 9.4
+postgresql_encoding: 'UTF-8'
+postgresql_locale: 'en_US.UTF-8'
+postgresql_ext_install_contrib: yes
+postgresql_ext_install_dev_headers: yes
+
+postgresql_admin_user: "postgres"
+postgresql_default_auth_method: "trust"
+
+postgresql_cluster_name: "main"
+postgresql_cluster_reset: false
+postgresql_apt_repository: false
+
+

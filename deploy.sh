@@ -14,12 +14,17 @@ GIT_REPO_URL=
 PROJECT_NAME=
 GIT_VERSION="master"
 
+BLUEPRINT="wagtail"
+STAGE="staging"
+
 VERBOSE_OPTION=""
 UPDATE_OPTION=""
 
+
+
 function show_help {
-    echo "USAGE: deploy.sh HOST USER --git GIT_URL --name PROJECTNAME"
-    echo "                 [--ref REF(=master)] [--update] [--verbose]"
+    echo "USAGE: deploy.sh HOST USER --git GIT_URL --name PROJECTNAME "
+    echo "                 [--ref REF(=master)] [--update] [--staging] [--verbose]"
     echo ""
 
     echo "  HOST: target remote host"
@@ -163,6 +168,6 @@ then
 fi
 
 ansible-playbook -u $REMOTE_USER -i "$HOST," \
-   --extra-vars "PROJECT_URL=$GIT_REPO_URL PROJECT_NAME=$PROJECT_NAME REMOTE_USER=$REMOTE_USER GIT_VERSION=$GIT_VERSION" \
+   --extra-vars "PROJECT_URL=$GIT_REPO_URL BLUEPRINT=$BLUEPRINT STAGE=$STAGE PROJECT_NAME=$PROJECT_NAME REMOTE_USER=$REMOTE_USER GIT_VERSION=$GIT_VERSION" \
    provisioning/site.yml ${VERBOSE_OPTION} ${UPDATE_OPTION}
 

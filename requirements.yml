@@ -5,6 +5,7 @@
 - src: andrewrothstein.ruby
 - src: https://github.com/ashwoods/ansible-uwsgi-emperor
   name: ashwoods.uwsgi-emperor
+  version: 0193a4d107f9e4cba03a6813cf3c54c3fc543eb2
 - src: https://github.com/elastic/ansible-elasticsearch
   name: elasticsearch
   version: 21363d052772192f58798d6fd305bf37d8ac1c27

@@ -1,0 +1,27 @@
+[uwsgi]
+
+master          = true
+processes       = 10
+chmod_socket    = 664
+socket          = /tmp/{{djangoapps_project}}.sock
+touch-reload    = /tmp/{{djangoapps_project}}.reload
+vacuum          = true
+enable-threads  = true
+thunder-lock    = true
+logger          = syslog:{{djangoapps_project}}
+
+uid = {{djangoapps_user}}
+gid = {{djangoapps_user}}
+
+# Django-related settings
+# the base directory (full path)
+chdir           = {{djangoapps_src}}
+module          = {{PROJECT_NAME}}.wsgi
+home            = {{djangoapps_venv}}
+# virtualenv      = {{djangoapps_venv}}
+
+env             = LC_ALL=en_US.UTF-8
+env             = LC_LANG=en_US.UTF-8
+env             = LANG=en_US.UTF-8
+
+attach-daemon = {{djangoapps_venv}}/bin/celery worker -A {{djangoapps_project}} -E -B -S django

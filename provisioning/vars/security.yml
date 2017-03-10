@@ -1,0 +1,10 @@
+firewall_allowed_tcp_ports:
+  - "22"
+  - "25"
+  - "80"
+security_ssh_port: 22
+security_ssh_password_authentication: "no"
+security_ssh_permit_root_login: "yes"
+security_ssh_usedns: "no"
+security_autoupdate_enabled: true
+security_fail2ban_enabled: true

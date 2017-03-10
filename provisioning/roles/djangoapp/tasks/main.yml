@@ -1,0 +1,195 @@
+
+
+- name: dependencies | include nginx production site
+  include_role:
+    name: jdauphant.nginx
+  vars:
+    nginx_http_params:
+      - sendfile on
+      - access_log /var/log/nginx/access.log
+      - client_max_body_size 1G
+    nginx_configs:
+      "{{djangoapps_project}}":
+        - upstream {{djangoapps_project}} { server unix:///tmp/{{djangoapps_project}}.sock; }
+    nginx_sites:
+      "{{djangoapps_project}}":
+        - listen 80
+        - server_name _
+        - location / {
+            client_max_body_size 200M;
+            uwsgi_pass {{djangoapps_project}};
+            include uwsgi_params;
+          }
+        - location /assets {
+            alias {{djangoapps_home}}/assets;
+          }
+  when: STAGE == 'production'
+
+- name: dependencies | include nginx staging site
+  include_role:
+    name: jdauphant.nginx
+  vars:
+    nginx_sites:
+      "{{djangoapps_project}}":
+        - listen 80
+        - server_name _
+        - location / {
+            client_max_body_size 200M;
+            uwsgi_pass {{djangoapps_project}};
+            include uwsgi_params;
+            auth_basic "Private";
+            auth_basic_user_file /etc/nginx/auth_basic/default;
+          }
+        - location /assets {
+            alias {{djangoapps_home}}/assets;
+          }
+    nginx_auth_basic_files:
+      default:
+        - admin:$apr1$RnYqk9no$/KO8rJdQBc/ienb5Zl6Ji1
+  when: STAGE == 'staging'
+
+- name: dependencies | include elasticsearch
+  include_role:
+    name: elasticsearch
+  vars:
+    es_instance_name: "{{djangoapps_project}}"
+    es_version: "2.4.4"
+    es_config: {
+      node.name: "{{djangoapps_project}}",
+      es_version_lock: true,
+      es_version: "2.4.4",
+    }
+  when: BLUEPRINT == 'wagtail'
+
+- name: dependencies | include postgresql
+  include_role:
+    name: ANXS.postgresql
+  vars:
+      # List of users to be created (optional)
+    postgresql_users:
+    - name: "{{djangoapps_project}}"
+      pass: "{{password}}"
+      encrypted: no       # denotes if the password is already encrypted.
+
+    # List of databases to be created (optional)
+    postgresql_databases:
+      - name: "{{djangoapps_project}}"
+        hstore: yes
+        owner: "{{djangoapps_user}}"
+
+
+- name: dependencies | install app python and system dependencies
+  apt: name={{item}} state=present
+  with_items:
+    - python
+    - python-dev
+    - python3
+    - python3-dev
+    - python-software-properties
+    - python-pip
+    - python3-pip
+    - python3-venv
+    - python-virtualenv
+    - virtualenvwrapper
+    - build-essential
+    - libavcodec-dev
+    - libavdevice-dev
+    - libavformat-dev
+    - libavresample-dev
+    - libavutil-dev
+    - libbz2-dev
+    - libffi-dev
+    - libghc-text-icu-dev
+    - libjpeg-dev
+    - libncurses5-dev
+    - libreadline-dev
+    - libsqlite3-dev
+    - libssl-dev
+    - libswscale-dev
+    - libxml2
+    - libxml2-dev
+    - libxslt1-dev
+    - zlib1g-dev
+    - llvm
+    - node-less
+    - git
+    - mercurial
+    - curl
+    - wget
+    - redis-server
+    - pkg-config
+
+- name: main | create user & home
+  user: name={{djangoapps_user}} home={{djangoapps_home}} group={{djangoapps_user}}
+
+- name: main | create assets folder
+  file: path={{djangoapps_home}}/assets state=directory owner={{djangoapps_user}} group={{djangoapps_user}} mode=0755
+
+#- name: main | create media folder
+#  file: path={{djangoapps_home}}/assets/media state=directory owner={{djangoapps_user}} mode=0640
+
+- name: main | add www-data
+  user: name=www-data group={{djangoapps_user}} append=yes
+
+- name: main | get source via git
+  git: repo="{{PROJECT_URL}}" dest="{{djangoapps_src}}" version="{{GIT_VERSION|default('master')}}" force=yes update=yes
+  become_user: "{{ djangoapps_user }}"
+  tags: ['update']
+
+- name: main | create production .env file
+  template: src=templates/env.j2  dest="{{djangoapps_src}}/.env" mode=0640
+  become_user: "{{ djangoapps_user }}"
+  tags: ['upgdate']
+
+- name: main | create virtualenv
+  command: "/usr/bin/pyvenv {{djangoapps_venv}}"
+  become_user: "{{ djangoapps_user }}"
+  args:
+    creates: "{{djangoapps_venv}}"
+
+- name: main | upgrade pip and wheel
+  pip: name="{{item.name}}" state=present executable="{{djangoapps_venv}}/bin/pip"
+  become_user: "{{ djangoapps_user }}"
+  with_items:
+    - { name: 'pip', version: 9.0.1}
+    - { name: 'wheel', version: 0.29.0}
+    - { name: 'setuptools', version: 32.3.1}
+    - { name: 'envdir' }
+  tags: ['update']
+
+- name: main | install project requirements
+  pip:
+    requirements: "{{djangoapps_src}}/requirements.txt"
+    executable: "{{djangoapps_venv}}/bin/pip"
+  become_user: "{{ djangoapps_user }}"
+  tags: ['update']
+
+- name: main | install src
+  shell: "{{djangoapps_venv}}/bin/pip install -e {{djangoapps_src}}"
+  become_user: "{{ djangoapps_user }}"
+  tags: ['update']
+
+- name: main | collectstatic
+  shell: "{{djangoapps_venv}}/bin/manage.py collectstatic --noinput"
+  become_user: "{{ djangoapps_user }}"
+  tags: ['update']
+
+- name: main | db migrate
+  shell: "{{djangoapps_venv}}/bin/manage.py migrate --noinput"
+  become_user: "{{ djangoapps_user }}"
+  tags: ['update']
+
+- name: main | update_index
+  shell: "{{djangoapps_venv}}/bin/manage.py update_index"
+  become_user: "{{ djangoapps_user }}"
+  tags: ['update']
+  when: BLUEPRINT == 'wagtail'
+
+- name: main | copy project-specific ini file for uWSGI
+  template: src=templates/uwsgi.ini.j2  dest="/etc/uwsgi-emperor/vassals/{{djangoapps_project}}.ini"
+
+- name: main | reload uwsgi apps
+  file:
+    path: "/tmp/{{djangoapps_project}}.reload"
+    state: touch
+  tags: ['update']
