@@ -8,7 +8,4 @@ postgresql_admin_user: "postgres"
 postgresql_default_auth_method: "trust"
 
 postgresql_cluster_name: "main"
-postgresql_cluster_reset: false
-postgresql_apt_repository: false
-
 
