@@ -99,6 +99,7 @@
     - libavutil-dev
     - libbz2-dev
     - libffi-dev
+    - libgdk-pixbuf2.0-0
     - libghc-text-icu-dev
     - libjpeg-dev
     - libncurses5-dev
